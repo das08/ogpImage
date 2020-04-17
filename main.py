@@ -35,7 +35,7 @@ class ogpImage:
         return image
 
     def addTextToImage(self, img, types, text, fontFile, fontSize, fontColor):
-        font = ImageFont.truetype(f"assets/fonts/{fontFile}", fontSize)
+        font = ImageFont.truetype("assets/fonts/{}".format(fontFile), fontSize)
         # font = ImageFont.truetype("assets/fonts/mssansBI.ttf", fontSize)
         image = ImageDraw.Draw(img)
 
@@ -90,7 +90,7 @@ def disp():
                                                fontColor=judgeColor["B"])
     baseImage.save("tmp/1.png")
 
-    return render_template("index.html", lecname=lectureName)
+    return render_template("index.html", searchType=searchType, lectureName=lectureName, rakutanJudge=rakutanJudge)
 
 
 if __name__ == "__main__":
