@@ -123,16 +123,15 @@ def disp():
 
     if searchType != "normal":
         tweetText = urllib.parse.quote(
-            "{}の結果「{}」[{}]はらくたん判定{}でした".format(titleVal[0], lectureName, facultyName, rakutanJudge))
+            "{}の結果「{}」[{}]はらくたん判定{}でした\n#京大楽単bot".format(titleVal[0], lectureName, facultyName, rakutanJudge))
     else:
-        tweetText = urllib.parse.quote("「{}」[{}]はらくたん判定{}でした".format(lectureName, facultyName, rakutanJudge))
+        tweetText = urllib.parse.quote("「{}」[{}]はらくたん判定{}でした\n#京大楽単bot".format(lectureName, facultyName, rakutanJudge))
 
     hashtag = urllib.parse.quote("京大楽単bot")
 
-    redirectURL = "https://twitter.com/share?url=https://ku-rakutan.das82.com/?gid={}&text={}&hashtags={}".format(
+    redirectURL = "https://twitter.com/share?url=https://ku-rakutan.das82.com/?gid={}&text={}".format(
         fileName,
-        tweetText,
-        hashtag)
+        tweetText)
 
     return redirect(redirectURL, code=302)
 
