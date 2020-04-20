@@ -1,19 +1,22 @@
+import datetime
+import hashlib
+
 from PIL import Image, ImageFont, ImageDraw
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
 SIZE_X = 860
 SIZE_Y = 450
 LECNAME_SIZE = (800, 180)
-LECNAME_OFF = (30, 35)
+LECNAME_OFF = (30, 40)
 JUDGE_SIZE = (300, 170)
 JUDGE_OFF = (30, 250)
 
-judgeSymbol = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'F', '-']
+judgeSymbol = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'F', '?']
 judgeColor = {"SSS": (195, 196, 91), "SS": (195, 196, 91), "S": (195, 196, 91),
               "A": (207, 41, 4), "B": (9, 138, 224), "C": (244, 138, 28),
-              "D": (138, 48, 201), "F": (131, 123, 138), "-": (0, 0, 0)}
+              "D": (138, 48, 201), "F": (131, 123, 138), "?": (131, 123, 138)}
 
 
 class ogpImage:
@@ -51,6 +54,11 @@ class ogpImage:
             sizeX, sizeY = (100, 100)
             offX, offY = (30, 30)
 
+        while textSize[0] + 10 > sizeX:
+            fontSize -= 2
+            font = ImageFont.truetype("assets/fonts/{}".format(fontFile), fontSize)
+            textSize = image.textsize(text, font=font)
+
         x = offX + (sizeX - textSize[0]) / 2
         y = offY + (sizeY - textSize[1]) / 2
 
@@ -67,8 +75,12 @@ class ogpImage:
 #                                    fontColor=judgeColor["B"])
 # baseImage.save("d.png")
 
-
 @app.route("/", methods=["GET"])
+def hello():
+    return render_template("index.html")
+
+
+@app.route("/gen", methods=["GET"])
 def disp():
     searchType = request.args.get('type')
     lectureName = request.args.get('lecname')
@@ -78,19 +90,27 @@ def disp():
     if searchType != "rakutan" or searchType != "onitan":
         searchType = "normal"
     if rakutanJudge not in judgeSymbol:
-        rakutanJudge = "-"
+        rakutanJudge = "?"
+    if lectureName is None:
+        lectureName = "Sample Text"
 
     process = ogpImage()
     baseImage = process.loadImage("assets/image/base3.png")
     processImageTitle = process.addTitleToImage(baseImage, "検索結果", 28, (1, 229, 80))
-
-    processImageLec = process.addTextToImage(baseImage, "lecname", "自然地理学", fontFile="UDDigiKyokashoN-B.ttc",
+    processImageLec = process.addTextToImage(baseImage, "lecname", lectureName, fontFile="UDDigiKyokashoN-B.ttc",
                                              fontSize=51, fontColor=(255, 255, 255))
-    processImageJudge = process.addTextToImage(baseImage, "judge", "B", fontFile="mssansBI.ttf", fontSize=85,
-                                               fontColor=judgeColor["B"])
-    baseImage.save("tmp/1.png")
+    processImageJudge = process.addTextToImage(baseImage, "judge", rakutanJudge, fontFile="mssansBI.ttf", fontSize=85,
+                                               fontColor=judgeColor[rakutanJudge])
 
-    return render_template("index.html", searchType=searchType, lectureName=lectureName, rakutanJudge=rakutanJudge)
+    tmpName = lectureName + str(datetime.datetime.today())
+
+    fileName = hashlib.md5(tmpName.encode()).hexdigest()
+
+    baseImage.save("static/tmp/{}.png".format(fileName))
+
+    # return render_template("index.html", searchType=searchType, lectureName=lectureName, rakutanJudge=rakutanJudge,
+    #                        fileName=fileName)
+    return render_template("index2.html", fileName=fileName)
 
 
 if __name__ == "__main__":
