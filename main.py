@@ -1,8 +1,10 @@
 import datetime
 import hashlib
+import requests
+import urllib.parse
 
 from PIL import Image, ImageFont, ImageDraw
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
@@ -66,51 +68,73 @@ class ogpImage:
         return image
 
 
-# baseImage = loadImage("assets/image/base3.png")
-# processImageTitle = addTitleToImage(baseImage, "検索結果", 28, (1, 229, 80))
-#
-# processImageLec = addTextToImage(baseImage, "lecname", "自然地理学", fontFile="UDDigiKyokashoN-B.ttc", fontSize=51,
-#                                  fontColor=(255, 255, 255))
-# processImageJudge = addTextToImage(baseImage, "judge", "B", fontFile="mssansBI.ttf", fontSize=85,
-#                                    fontColor=judgeColor["B"])
-# baseImage.save("d.png")
-
 @app.route("/", methods=["GET"])
 def hello():
-    return render_template("index.html")
+    imageID = request.args.get('gid')
+    if (imageID is None) or (not imageID.isalnum()):
+        imageURL = "default.png"
+    else:
+        imageURL = imageID + ".png"
+
+    return render_template("index.html", imageURL=imageURL)
 
 
 @app.route("/gen", methods=["GET"])
 def disp():
     searchType = request.args.get('type')
     lectureName = request.args.get('lecname')
+    facultyName = request.args.get('facname')
     rakutanJudge = request.args.get('judge')
 
     # validation check
-    if searchType != "rakutan" or searchType != "onitan":
+
+    if searchType != "rakutan" and searchType != "onitan" and searchType != "jinsha":
         searchType = "normal"
     if rakutanJudge not in judgeSymbol:
         rakutanJudge = "?"
     if lectureName is None:
         lectureName = "Sample Text"
+    if facultyName is None:
+        facultyName = '---'
+
+    # searchType
+    if searchType == "rakutan":
+        titleVal = ("楽単おみくじ", (255, 126, 65))
+    elif searchType == "onitan":
+        titleVal = ("鬼単おみくじ", (109, 123, 255))
+    elif searchType == "jinsha":
+        titleVal = ("人社おみくじ", (204, 145, 62))
+    else:
+        titleVal = ("検索", (1, 229, 80))
 
     process = ogpImage()
     baseImage = process.loadImage("assets/image/base3.png")
-    processImageTitle = process.addTitleToImage(baseImage, "検索結果", 28, (1, 229, 80))
+    processImageTitle = process.addTitleToImage(baseImage, titleVal[0] + "結果", 28, titleVal[1])
     processImageLec = process.addTextToImage(baseImage, "lecname", lectureName, fontFile="UDDigiKyokashoN-B.ttc",
                                              fontSize=51, fontColor=(255, 255, 255))
     processImageJudge = process.addTextToImage(baseImage, "judge", rakutanJudge, fontFile="mssansBI.ttf", fontSize=85,
                                                fontColor=judgeColor[rakutanJudge])
 
-    tmpName = lectureName + str(datetime.datetime.today())
+    tmpName = lectureName + facultyName
 
     fileName = hashlib.md5(tmpName.encode()).hexdigest()
 
     baseImage.save("static/tmp/{}.png".format(fileName))
 
-    # return render_template("index.html", searchType=searchType, lectureName=lectureName, rakutanJudge=rakutanJudge,
-    #                        fileName=fileName)
-    return render_template("index2.html", fileName=fileName)
+    if searchType != "normal":
+        tweetText = urllib.parse.quote(
+            "{}の結果「{}」[{}]はらくたん判定{}でした".format(titleVal[0], lectureName, facultyName, rakutanJudge))
+    else:
+        tweetText = urllib.parse.quote("「{}」[{}]はらくたん判定{}でした".format(lectureName, facultyName, rakutanJudge))
+
+    hashtag = urllib.parse.quote("京大楽単bot")
+
+    redirectURL = "https://twitter.com/share?url=https://ku-rakutan.das82.com/?gid={}&text={}&hashtags={}".format(
+        fileName,
+        tweetText,
+        hashtag)
+
+    return redirect(redirectURL, code=302)
 
 
 if __name__ == "__main__":
