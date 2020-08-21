@@ -95,8 +95,8 @@ def disp():
     students = [0, 0, 0]
     accepted = [0, 0, 0]
     for i in range(1, 4):
-        students[i] = request.args.get('s{}'.format(i))
-        accepted[i] = request.args.get('a{}'.format(i))
+        students[i-1] = request.args.get('s{}'.format(i))
+        accepted[i-1] = request.args.get('a{}'.format(i))
 
     # validation check
 
@@ -130,7 +130,7 @@ def disp():
         if students[i] == 0:
             ratePercentage = "---"
         else:
-            ratePercentage = round(100 * accepted[i] / students[i])
+            ratePercentage = round(100 * int(accepted[i]) / int(students[i]))
         rateText = "{}年度 {}% ({}/{})".format(THIS_YEAR - i - 1, ratePercentage, accepted[i], students[i])
         processImageRate = process.addTextToImage(baseImage, "custom", rateText,
                                                   fontFile="UDDigiKyokashoN-B.ttc", fontSize=25,
@@ -141,7 +141,7 @@ def disp():
 
     fileName = hashlib.md5(tmpName.encode()).hexdigest()
 
-    baseImage.save("gen_test/{}.png".format(fileName))
+    baseImage.save("static/tmp/{}.png".format(fileName))
 
     if searchType != "normal":
         tweetText = urllib.parse.quote(
