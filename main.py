@@ -1,4 +1,3 @@
-import datetime
 import hashlib
 import requests
 import urllib.parse
@@ -95,8 +94,8 @@ def disp():
     students = [0, 0, 0]
     accepted = [0, 0, 0]
     for i in range(1, 4):
-        students[i-1] = request.args.get('s{}'.format(i))
-        accepted[i-1] = request.args.get('a{}'.format(i))
+        students[i-1] = int(request.args.get('s{}'.format(i)))
+        accepted[i-1] = int(request.args.get('a{}'.format(i)))
 
     # validation check
 
@@ -129,8 +128,10 @@ def disp():
     for i in range(3):
         if students[i] == 0:
             ratePercentage = "---"
+            accepted[i] = "-"
+            students[i] = "-"
         else:
-            ratePercentage = round(100 * int(accepted[i]) / int(students[i]))
+            ratePercentage = round(100 * (accepted[i]) / (students[i]))
         rateText = "{}年度 {}% ({}/{})".format(THIS_YEAR - i - 1, ratePercentage, accepted[i], students[i])
         processImageRate = process.addTextToImage(baseImage, "custom", rateText,
                                                   fontFile="UDDigiKyokashoN-B.ttc", fontSize=25,
