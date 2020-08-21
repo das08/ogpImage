@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
+THIS_YEAR = 2020
 SIZE_X = 860
 SIZE_Y = 450
 LECNAME_SIZE = (800, 180)
@@ -39,7 +40,7 @@ class ogpImage:
         image.text((x, y), text, fontColor, font=font)
         return image
 
-    def addTextToImage(self, img, types, text, fontFile, fontSize, fontColor):
+    def addTextToImage(self, img, types, text, fontFile, fontSize, fontColor, size=None, off=None):
         font = ImageFont.truetype("assets/fonts/{}".format(fontFile), fontSize)
         # font = ImageFont.truetype("assets/fonts/mssansBI.ttf", fontSize)
         image = ImageDraw.Draw(img)
@@ -52,6 +53,9 @@ class ogpImage:
         elif types == "judge":
             sizeX, sizeY = JUDGE_SIZE
             offX, offY = JUDGE_OFF
+        elif types == "custom":
+            sizeX, sizeY = size
+            offX, offY = off
         else:
             sizeX, sizeY = (100, 100)
             offX, offY = (30, 30)
@@ -63,6 +67,9 @@ class ogpImage:
 
         x = offX + (sizeX - textSize[0]) / 2
         y = offY + (sizeY - textSize[1]) / 2
+        if types == "custom":
+            x = offX + sizeX / 2
+            y = offY + sizeY / 2
 
         image.text((x, y), text, fontColor, font=font)
         return image
@@ -85,6 +92,11 @@ def disp():
     lectureName = request.args.get('lecname')
     facultyName = request.args.get('facname')
     rakutanJudge = request.args.get('judge')
+    students = [0, 0, 0]
+    accepted = [0, 0, 0]
+    for i in range(1, 4):
+        students[i] = request.args.get('s{}'.format(i))
+        accepted[i] = request.args.get('a{}'.format(i))
 
     # validation check
 
@@ -108,18 +120,28 @@ def disp():
         titleVal = ("検索", (1, 229, 80))
 
     process = ogpImage()
-    baseImage = process.loadImage("assets/image/base3.png")
+    baseImage = process.loadImage("assets/image/base4.png")
     processImageTitle = process.addTitleToImage(baseImage, titleVal[0] + "結果", 28, titleVal[1])
     processImageLec = process.addTextToImage(baseImage, "lecname", lectureName, fontFile="UDDigiKyokashoN-B.ttc",
                                              fontSize=51, fontColor=(255, 255, 255))
     processImageJudge = process.addTextToImage(baseImage, "judge", rakutanJudge, fontFile="mssansBI.ttf", fontSize=85,
                                                fontColor=judgeColor[rakutanJudge])
+    for i in range(3):
+        if students[i] == 0:
+            ratePercentage = "---"
+        else:
+            ratePercentage = round(100 * accepted[i] / students[i])
+        rateText = "{}年度 {}% ({}/{})".format(THIS_YEAR - i - 1, ratePercentage, accepted[i], students[i])
+        processImageRate = process.addTextToImage(baseImage, "custom", rateText,
+                                                  fontFile="UDDigiKyokashoN-B.ttc", fontSize=25,
+                                                  fontColor=(255, 255, 255),
+                                                  size=(320, 170), off=(210, 215 + 35 * i))
 
     tmpName = lectureName + facultyName
 
     fileName = hashlib.md5(tmpName.encode()).hexdigest()
 
-    baseImage.save("static/tmp/{}.png".format(fileName))
+    baseImage.save("gen_test/{}.png".format(fileName))
 
     if searchType != "normal":
         tweetText = urllib.parse.quote(
