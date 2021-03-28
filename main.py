@@ -152,7 +152,7 @@ def disp():
 
     hashtag = urllib.parse.quote("京大楽単bot")
 
-    redirectURL = "https://twitter.com/share?url=https://ku-rakutan.das82.com/?gid={}&text={}".format(
+    redirectURL = "https://twitter.com/share?url=https://ku-rakutan.das82.com/?gid={}&text={}&openExternalBrowser=1".format(
         fileName,
         tweetText)
 
